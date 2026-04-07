@@ -1,26 +1,44 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --font-sans: "Inter", "Poppins", ui-sans-serif, system-ui, sans-serif;
+  
+  --color-background: #0b0b0b;
+  --color-foreground: #ffffff;
+  --color-primary: #3b82f6;
+  --color-accent: #2563eb;
+  
+  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.5);
+  --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .btn-primary {
+    @apply relative overflow-hidden bg-primary px-8 py-4 rounded-full font-bold transition-all duration-300 hover:shadow-glow hover:scale-105 active:scale-95 text-white flex items-center justify-center space-x-2;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-white via-primary to-accent;
+  }
+}
+
+/* Custom Utilities for Glow */
+.glow-on-hover:hover {
+  filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.8));
 }

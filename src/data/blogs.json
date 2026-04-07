@@ -1,0 +1,34 @@
+[
+  {
+    "id": "1",
+    "title": "Boost Your Business with Expert Web Development",
+    "slug": "boost-business-web-development",
+    "content": "<h2>Custom Web Solutions</h2><p>At Convertix Studio, we craft modern, high-converting websites tailored to your brand. From responsive layouts to scalable architecture, we ensure your online presence drives real results.</p>",
+    "category": "WEB DEVELOPMENT",
+    "createdAt": "2024-04-06T12:00:00Z"
+  },
+  {
+    "id": "2",
+    "title": "SEO Optimization for Maximum Visibility",
+    "slug": "seo-optimization-visibility",
+    "content": "<h2>Search Engine Excellence</h2><p>We implement data-driven SEO strategies to increase your website's visibility. With technical SEO, on-page optimization, and performance audits, your business reaches the right audience.</p>",
+    "category": "SEO",
+    "createdAt": "2024-04-06T13:00:00Z"
+  },
+  {
+    "id": "3",
+    "title": "UI/UX Design that Converts Visitors",
+    "slug": "ui-ux-design-converts",
+    "content": "<h2>Design Meets Conversion</h2><p>Our UI/UX design approach focuses on creating seamless, engaging experiences. Every element guides users towards action, enhancing both satisfaction and business growth.</p>",
+    "category": "UI/UX DESIGN",
+    "createdAt": "2024-04-06T14:00:00Z"
+  },
+  {
+    "id": "4",
+    "title": "E-commerce Solutions for Modern Businesses",
+    "slug": "ecommerce-solutions-modern-business",
+    "content": "<h2>Sell Smarter Online</h2><p>Convertix Studio builds scalable e-commerce platforms with optimized checkout flows, responsive design, and conversion-focused features. Grow your sales with tech-driven solutions.</p>",
+    "category": "E-COMMERCE",
+    "createdAt": "2024-04-06T15:00:00Z"
+  }
+]
