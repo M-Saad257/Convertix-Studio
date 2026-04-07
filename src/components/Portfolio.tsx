@@ -1,33 +1,33 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ExternalLink, Github } from "lucide-react";
-import Image from "next/image";
+import { ExternalLink } from "lucide-react";
 import Link from "next/link";
-
-const projects = [
-  {
-    title: "EcoDrive E-Commerce",
-    category: "Development",
-    description: "Next.js 14-powered store with real-time inventory management.",
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800",
-  },
-  {
-    title: "Aura AI Dashboard",
-    category: "Design",
-    description: "Complex data visualization platform with glassmorphic aesthetics.",
-    image: "https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?auto=format&fit=crop&q=80&w=800",
-  },
-  {
-    title: "Global Link SaaS",
-    category: "Strategy",
-    description: "Strategic SaaS platform scaled to 50k+ monthly active users.",
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=800",
-  },
-];
+import { supabase } from "@/lib/supabase";
+import { PortfolioItem } from "@/types/database.types";
 
 export default function Portfolio() {
+  const [projects, setProjects] = useState<PortfolioItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPortfolio = async () => {
+      const { data, error } = await supabase
+        .from('portfolio')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      if (!error && data) {
+        setProjects(data);
+      }
+      setLoading(false);
+    };
+
+    fetchPortfolio();
+  }, []);
+
   return (
     <section id="portfolio" className="py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -67,39 +67,58 @@ export default function Portfolio() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 px-4 text-center items-center">
-          {projects.map((project, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className="group cursor-pointer relative"
-            >
-              <div className="relative aspect-[4/3] rounded-[48px] overflow-hidden mb-8 bg-white/5 border border-white/10 group-hover:border-primary/50 transition-all shadow-3xl">
-                <img
-                  src={project.image}
-                  alt={project.title}
-                  className="object-cover w-full h-full grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-out"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
-                
-                {/* Float Badge */}
-                <div className="absolute top-6 right-6 px-4 py-2 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-[10px] font-black text-white uppercase tracking-widest italic">
-                  {project.category}
+          {loading ? (
+            // Loading Skeletons
+            [...Array(3)].map((_, i) => (
+              <div key={i} className="animate-pulse space-y-8">
+                <div className="aspect-[4/3] rounded-[48px] bg-white/5 border border-white/10" />
+                <div className="space-y-4">
+                  <div className="h-8 bg-white/5 rounded-full w-3/4 mx-auto" />
+                  <div className="h-4 bg-white/5 rounded-full w-1/2 mx-auto" />
                 </div>
               </div>
+            ))
+          ) : projects.length > 0 ? (
+            projects.map((project, index) => (
+              <motion.div
+                key={project.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="group cursor-pointer relative"
+              >
+                <div className="relative aspect-[4/3] rounded-[48px] overflow-hidden mb-8 bg-white/5 border border-white/10 group-hover:border-primary/50 transition-all shadow-3xl">
+                  <img
+                    src={project.image_url}
+                    alt={project.title}
+                    className="object-cover w-full h-full grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 ease-out"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
+                  
+                  {/* Float Badge */}
+                  <div className="absolute top-6 right-6 px-4 py-2 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-[10px] font-black text-white uppercase tracking-widest italic">
+                    {project.category}
+                  </div>
+                </div>
 
-              <div className="space-y-4">
-                <h3 className="text-2xl font-black group-hover:text-primary transition-colors uppercase italic tracking-tighter">
-                  {project.title}
-                </h3>
-                <p className="text-white/20 text-sm font-bold leading-relaxed px-4">
-                  {project.description}
-                </p>
-              </div>
-            </motion.div>
-          ))}
+                <div className="space-y-4">
+                  <h3 className="text-2xl font-black group-hover:text-primary transition-colors uppercase italic tracking-tighter">
+                    {project.title}
+                  </h3>
+                  <p className="text-white/20 text-sm font-bold leading-relaxed px-4">
+                    {project.description}
+                  </p>
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-full py-20 text-center">
+              <p className="text-white/20 uppercase font-black tracking-widest italic text-xs">
+                No active projects found in matrix.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </section>
