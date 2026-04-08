@@ -5,12 +5,13 @@ import { supabase } from "@/lib/supabase";
 import { Session } from "@supabase/supabase-js";
 import { useRouter, usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Briefcase, LayoutDashboard, LogOut, MessageSquare, Newspaper, Settings } from "lucide-react";
+import { Briefcase, LayoutDashboard, LogOut, MessageSquare, Newspaper, Settings, Menu, X, Clock } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -32,6 +33,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     return () => subscription.unsubscribe();
   }, [pathname, router]);
+
+  // Close sidebar on navigation
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [pathname]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -55,16 +61,45 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const menuItems = [
     { name: "Dashboard", icon: LayoutDashboard, path: "/admin/dashboard" },
     { name: "Projects", icon: Briefcase, path: "/admin/projects" },
-    { name: "Portfolio", icon: Settings, path: "/admin/portfolio" },
     { name: "Blog Posts", icon: Newspaper, path: "/admin/posts" },
     { name: "Contacts", icon: MessageSquare, path: "/admin/contacts" },
+    { name: "Message History", icon: Clock, path: "/admin/history" },
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white flex">
+    <div className="min-h-screen bg-black text-white flex flex-col md:flex-row">
+      {/* Mobile Header */}
+      <header className="md:hidden flex items-center justify-between p-4 border-b border-white/5 bg-black/80 backdrop-blur-xl sticky top-0 z-[100]">
+        <h2 className="text-lg font-black uppercase italic tracking-tighter">
+          Convertix <span className="text-primary italic tracking-widest text-[10px]">Admin.</span>
+        </h2>
+        <button 
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="p-2 text-white/60 hover:text-primary transition-colors"
+        >
+          {isSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      </header>
+
+      {/* Sidebar Overlay (Mobile Only) */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[80] md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
       {/* Sidebar */}
-      <aside className="w-64 border-r border-white/5 bg-white/[0.02] backdrop-blur-xl hidden md:flex flex-col p-6 fixed h-full z-50">
-        <div className="mb-12 px-2">
+      <aside className={`
+        w-64 border-r border-white/5 bg-white/[0.02] backdrop-blur-xl flex flex-col p-6 fixed h-full z-[90] transition-transform duration-300
+        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+      `}>
+        <div className="mb-12 px-2 hidden md:block">
           <h2 className="text-xl font-black uppercase italic tracking-tighter">
             Convertix <span className="text-primary italic tracking-widest text-xs">Admin.</span>
           </h2>
@@ -89,7 +124,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <button
           onClick={handleSignOut}
-          className="mt-auto flex items-center space-x-3 px-4 py-3 rounded-2xl text-red-500/50 hover:text-red-500 hover:bg-red-500/10 transition-all font-black uppercase tracking-widest text-[10px] italic border border-transparent hover:border-red-500/20"
+          className="mt-6 md:mt-auto flex items-center space-x-3 px-4 py-3 rounded-2xl text-red-500/50 hover:text-red-500 hover:bg-red-500/10 transition-all font-black uppercase tracking-widest text-[10px] italic border border-transparent hover:border-red-500/20"
         >
           <LogOut className="w-4 h-4" />
           <span>Terminate Session</span>

@@ -9,16 +9,7 @@ export interface Project {
   created_at: string;
 }
 
-export interface PortfolioItem {
-  id: string;
-  title: string;
-  description: string;
-  image_url: string;
-  category: string;
-  created_at: string;
-}
-
-export interface BlogPost {
+ export interface BlogPost {
   id: string;
   title: string;
   slug: string;

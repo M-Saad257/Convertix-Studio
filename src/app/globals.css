@@ -2,12 +2,12 @@
 
 @theme {
   --font-sans: "Inter", "Poppins", ui-sans-serif, system-ui, sans-serif;
-  
+
   --color-background: #0b0b0b;
   --color-foreground: #ffffff;
   --color-primary: #3b82f6;
   --color-accent: #2563eb;
-  
+
   --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.5);
   --shadow-glass: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
 }
@@ -41,4 +41,32 @@
 /* Custom Utilities for Glow */
 .glow-on-hover:hover {
   filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.8));
+}
+
+/* Custom High-Tech Scrollbar */
+::-webkit-scrollbar {
+  width: 15px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1a1a1a;
+  border-radius: 20px;
+  border: 3px solid #000000;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+  box-shadow: 0 0 10px var(--color-primary);
+}
+
+/* Firefox Support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #1a1a1a #000000;
 }

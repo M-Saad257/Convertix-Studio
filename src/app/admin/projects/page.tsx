@@ -20,6 +20,8 @@ export default function AdminProjects() {
     project_url: "",
     github_url: ""
   });
+  const [isCustom, setIsCustom] = useState(false);
+  const categories = ["Development", "Design", "Strategy", "Marketing"];
 
   const fetchProjects = async () => {
     const { data, error } = await supabase
@@ -35,6 +37,27 @@ export default function AdminProjects() {
 
   useEffect(() => {
     fetchProjects();
+
+    const channel = supabase
+      .channel('admin_projects')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'projects' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            setProjects(current => [payload.new as Project, ...current]);
+          } else if (payload.eventType === 'UPDATE') {
+            setProjects(current => current.map(p => p.id === payload.new.id ? { ...p, ...payload.new } : p));
+          } else if (payload.eventType === 'DELETE') {
+            setProjects(current => current.filter(p => p.id !== payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -45,7 +68,7 @@ export default function AdminProjects() {
       setFormData({ ...formData, image_url: url });
     } catch (error) {
       console.error("Upload failed:", error);
-      alert("Failed to upload image intelligence to matrix.");
+      alert("Failed to upload project image.");
     } finally {
       setUploading(false);
     }
@@ -53,35 +76,28 @@ export default function AdminProjects() {
 
   const handleSave = async (id?: string) => {
     if (id) {
-       // Update
-       const { error } = await supabase.from('projects').update(formData).eq('id', id);
-       if (!error) {
-         setProjects(projects.map(p => p.id === id ? { ...p, ...formData } : p));
-         setEditingId(null);
-       }
+       await supabase.from('projects').update(formData).eq('id', id);
+       setEditingId(null);
     } else {
-       // Create
-       const { data, error } = await supabase.from('projects').insert([formData]).select();
-       if (!error && data) {
-         setProjects([data[0], ...projects]);
-         setShowAddForm(false);
-         setFormData({ name: "", description: "", category: "Development", image_url: "", project_url: "", github_url: "" });
-       }
+       await supabase.from('projects').insert([formData]);
+       setShowAddForm(false);
+       setFormData({ name: "", description: "", category: "Development", image_url: "", project_url: "", github_url: "" });
+       setIsCustom(false);
     }
+    // State will be updated via realtime subscription
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to terminate this project from the matrix?")) return;
-    const { error } = await supabase.from('projects').delete().eq('id', id);
-    if (!error) {
-      setProjects(projects.filter(p => p.id !== id));
-    }
+    if (!confirm("Are you sure you want to delete this project?")) return;
+    await supabase.from('projects').delete().eq('id', id);
+    // State will be updated via realtime subscription
   };
 
   const handleEdit = (project: Project) => {
     setFormData(project);
     setEditingId(project.id);
     setShowAddForm(false);
+    setIsCustom(!categories.includes(project.category));
   };
 
   return (
@@ -89,18 +105,23 @@ export default function AdminProjects() {
       <header className="flex justify-between items-end">
         <div>
           <h1 className="text-4xl font-black uppercase italic tracking-tighter mb-2">
-            Project <span className="text-primary tracking-widest text-xs italic">Registry.</span>
+            Project <span className="text-primary tracking-widest text-xs italic">Management.</span>
           </h1>
           <p className="text-white/20 text-xs font-black uppercase tracking-[4px]">
-            Operational Capacity: {projects.length} Entries
+            Total Entries: {projects.length}
           </p>
         </div>
         <button
-          onClick={() => { setShowAddForm(!showAddForm); setEditingId(null); setFormData({ name: "", description: "", category: "Development", image_url: "", project_url: "", github_url: "" }); }}
+          onClick={() => { 
+            setShowAddForm(!showAddForm); 
+            setEditingId(null); 
+            setFormData({ name: "", description: "", category: "Development", image_url: "", project_url: "", github_url: "" });
+            setIsCustom(false);
+          }}
           className="bg-primary hover:bg-primary/80 text-black px-6 py-4 rounded-2xl flex items-center space-x-2 font-black uppercase tracking-widest text-xs italic transition-all shadow-lg"
         >
           {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-          <span>{showAddForm ? "Abort Protocol" : "Initialize New Execution"}</span>
+          <span>{showAddForm ? "Cancel" : "Add New Project"}</span>
         </button>
       </header>
 
@@ -116,10 +137,10 @@ export default function AdminProjects() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2 italic">Entity Designation</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2 italic">Project Name</label>
                 <input
                   type="text"
-                  placeholder="e.g. KITCHLIANCE"
+                  placeholder="e.g. Kitchliance"
                   className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm focus:border-primary/50 focus:outline-none transition-all placeholder:opacity-20"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -127,23 +148,59 @@ export default function AdminProjects() {
               </div>
 
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2 italic">Operational Category</label>
-                <select
-                  className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm focus:border-primary/50 focus:outline-none transition-all"
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                >
-                  <option value="Development" className="bg-black">DEVELOPMENT</option>
-                  <option value="Design" className="bg-black">DESIGN</option>
-                  <option value="Strategy" className="bg-black">STRATEGY</option>
-                  <option value="Marketing" className="bg-black">MARKETING</option>
-                </select>
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2 italic">Project Category</label>
+                <div className="space-y-4">
+                  <div className="relative group/select">
+                    <select
+                      className="w-full bg-black/60 border border-white/10 rounded-2xl p-4 pr-12 text-sm focus:border-primary/50 focus:outline-none transition-all appearance-none cursor-pointer group-hover/select:border-white/20 select-custom"
+                      value={isCustom ? "Custom" : formData.category}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "Custom") {
+                          setIsCustom(true);
+                          setFormData({ ...formData, category: "" });
+                        } else {
+                          setIsCustom(false);
+                          setFormData({ ...formData, category: val });
+                        }
+                      }}
+                    >
+                      {categories.map(cat => (
+                        <option key={cat} value={cat} className="bg-black text-white">{cat.toUpperCase()}</option>
+                      ))}
+                      <option value="Custom" className="bg-black text-white">CUSTOM / OTHER</option>
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/20 group-hover/select:text-primary transition-colors">
+                      <Plus className={`w-4 h-4 transition-transform duration-300 ${isCustom ? 'rotate-45' : ''}`} />
+                    </div>
+                  </div>
+
+                  <AnimatePresence>
+                    {isCustom && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0, y: -10 }}
+                        animate={{ opacity: 1, height: 'auto', y: 0 }}
+                        exit={{ opacity: 0, height: 0, y: -10 }}
+                        className="overflow-hidden"
+                      >
+                        <input
+                          type="text"
+                          placeholder="Enter custom category..."
+                          className="w-full bg-primary/5 border border-primary/20 rounded-2xl p-4 text-sm focus:border-primary focus:outline-none transition-all placeholder:opacity-20 text-primary font-bold italic"
+                          value={formData.category}
+                          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                          autoFocus
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
 
               <div className="md:col-span-2 space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2 italic">Mission Parameters (Description)</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2 italic">Project Description</label>
                 <textarea
-                  placeholder="Mission brief..."
+                  placeholder="Describe the project..."
                   className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm focus:border-primary/50 focus:outline-none transition-all h-24 placeholder:opacity-20"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
@@ -151,7 +208,7 @@ export default function AdminProjects() {
               </div>
 
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2 italic">Intelligence Asset (Image)</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2 italic">Project Image</label>
                 <div className="relative group/upload">
                   <div className="aspect-video relative rounded-2xl bg-black/40 border border-white/10 overflow-hidden flex flex-col items-center justify-center p-4">
                      {uploading ? (
@@ -161,7 +218,7 @@ export default function AdminProjects() {
                      ) : (
                          <>
                             <Upload className="w-8 h-8 text-white/10 group-hover/upload:text-primary transition-colors" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-white/20 mt-2">Transmit Image Data</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-white/20 mt-2">Upload Project Image</span>
                          </>
                      )}
                      <input
@@ -175,7 +232,7 @@ export default function AdminProjects() {
               </div>
 
               <div className="space-y-4">
-                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2 italic">Broadcast Link (URL)</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2 italic">Website Link (URL)</label>
                 <div className="relative">
                   <ExternalLink className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                   <input
@@ -194,7 +251,7 @@ export default function AdminProjects() {
                   className="bg-primary hover:bg-primary/80 text-black px-8 py-4 rounded-2xl flex items-center space-x-2 font-black uppercase tracking-widest text-xs italic transition-all shadow-glow"
                 >
                   <Save className="w-4 h-4" />
-                  <span>Execute {editingId ? "Modification" : "Registry"}</span>
+                  <span>{editingId ? "Update Project" : "Save Project"}</span>
                 </button>
               </div>
             </div>
