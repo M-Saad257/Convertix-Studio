@@ -16,10 +16,7 @@ export const metadata: Metadata = {
   description:
     "Expert Web Development, SEO, and UI/UX Design services targeting high growth for your business.",
   keywords: ["Web Development", "SEO", "Digital Agency", "Convertix Studio"],
-  metadataBase: new URL("https://convertix.studio"),
-  icons: {
-    icon: "/favicon.jpg",
-  },
+  metadataBase: new URL("https://convertix.studio")
 };
 
 export default function RootLayout({
